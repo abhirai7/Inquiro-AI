@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Custom Chatbot</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2rem; max-width: 600px; margin: auto; }
+    input, textarea, button { width: 100%; margin-top: 1rem; padding: 0.5rem; }
+    .response { background: #f2f2f2; padding: 1rem; border-radius: 5px; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Custom Website Chatbot</h1>
+
+  <input type="text" id="urlInput" placeholder="Enter website URL" />
+  <button onclick="scrapeWebsite()">Scrape & Train</button>
+
+  <textarea id="queryInput" rows="4" placeholder="Ask a question..."></textarea>
+  <button onclick="askQuestion()">Ask</button>
+
+  <div id="response" class="response"></div>
+
+  <script>
+    async function scrapeWebsite() {
+      const url = document.getElementById('urlInput').value;
+      const res = await fetch('/scrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      const data = await res.json();
+      alert(data.message);
+    }
+
+    async function askQuestion() {
+      const url = document.getElementById('urlInput').value;
+      const query = document.getElementById('queryInput').value;
+      const res = await fetch('/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, query })
+      });
+      const data = await res.json();
+      document.getElementById('response').innerText = data.response;
+    }
+  </script>
+</body>
+</html>
