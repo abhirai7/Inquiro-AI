@@ -1,42 +1,55 @@
-### backend/vector_store.py
-
-import faiss
 import os
 import numpy as np
 import pickle
+from sklearn.metrics.pairwise import cosine_similarity
 
 # Directory to store vector data
 VECTOR_DIR = "data/vectors"
 os.makedirs(VECTOR_DIR, exist_ok=True)
 
-def save_embeddings(domain: str, embeddings: list, text: str):
+
+def save_embeddings(domain: str, embedding: np.ndarray, text: str):
+    """
+    Saves the embedding and associated text to disk.
+
+    Args:
+        domain (str): The website domain.
+        embedding (np.ndarray): The vector embedding.
+        text (str): The associated content text.
+    """
     domain_name = domain.split("//")[-1].split("/")[0]
-    vector_path = os.path.join(VECTOR_DIR, f"{domain_name}_index.faiss")
-    text_path = os.path.join(VECTOR_DIR, f"{domain_name}_texts.pkl")
+    vector_path = os.path.join(VECTOR_DIR, f"{domain_name}_embedding.npy")
+    text_path = os.path.join(VECTOR_DIR, f"{domain_name}_text.pkl")
 
-    # Create FAISS index
-    dim = len(embeddings)
-    index = faiss.IndexFlatL2(dim)
-    index.add(np.array([embeddings], dtype="float32"))
-    faiss.write_index(index, vector_path)
+    np.save(vector_path, embedding)
 
-    # Save associated text
     with open(text_path, "wb") as f:
-        pickle.dump([text], f)
+        pickle.dump(text, f)
 
 
-def search_embeddings(domain: str, query_embedding: list, top_k: int = 1):
+def search_embeddings(domain: str, query_embedding: np.ndarray, top_k: int = 1):
+    """
+    Searches for the most similar document using cosine similarity.
+
+    Args:
+        domain (str): The website domain.
+        query_embedding (np.ndarray): The embedding for the user's query.
+        top_k (int): Number of top results to return.
+
+    Returns:
+        list: Most similar text(s).
+    """
     domain_name = domain.split("//")[-1].split("/")[0]
-    vector_path = os.path.join(VECTOR_DIR, f"{domain_name}_index.faiss")
-    text_path = os.path.join(VECTOR_DIR, f"{domain_name}_texts.pkl")
+    vector_path = os.path.join(VECTOR_DIR, f"{domain_name}_embedding.npy")
+    text_path = os.path.join(VECTOR_DIR, f"{domain_name}_text.pkl")
 
     if not os.path.exists(vector_path) or not os.path.exists(text_path):
         return []
 
-    index = faiss.read_index(vector_path)
-    D, I = index.search(np.array([query_embedding], dtype="float32"), top_k)
+    stored_embedding = np.load(vector_path)
+    similarity = cosine_similarity([query_embedding], [stored_embedding])[0][0]
 
     with open(text_path, "rb") as f:
-        texts = pickle.load(f)
+        text = pickle.load(f)
 
-    return [texts[i] for i in I[0] if i < len(texts)]
+    return [text] if similarity > 0 else []

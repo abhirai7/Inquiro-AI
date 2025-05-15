@@ -3,7 +3,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from backend.scraper import scrape_website
+from backend.scraper  import scrape_website
 from backend.chatbot import generate_response
 import os
 

@@ -2,48 +2,181 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Custom Chatbot</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
   <style>
-    body { font-family: Arial, sans-serif; padding: 2rem; max-width: 600px; margin: auto; }
-    input, textarea, button { width: 100%; margin-top: 1rem; padding: 0.5rem; }
-    .response { background: #f2f2f2; padding: 1rem; border-radius: 5px; margin-top: 1rem; }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
+      padding: 2rem;
+    }
+    .container {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      padding: 2rem;
+      max-width: 700px;
+      margin: auto;
+    }
+    h1 {
+      color: #343a40;
+      margin-bottom: 1.5rem;
+    }
+    .btn-custom {
+      background-color: #007bff;
+      color: white;
+    }
+    .btn-custom:hover {
+      background-color: #0056b3;
+    }
+    .form-control {
+      border-radius: 5px;
+    }
+    #chatHistory {
+      height: 300px;
+      overflow-y: auto;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .chat-msg {
+      margin-bottom: 1rem;
+    }
+    .chat-user {
+      font-weight: bold;
+      color: #007bff;
+    }
+    .chat-bot {
+      font-weight: bold;
+      color: #28a745;
+    }
   </style>
 </head>
 <body>
-  <h1>Custom Website Chatbot</h1>
+  <div class="container">
+    <h1 class="text-center">Custom Website Chatbot</h1>
 
-  <input type="text" id="urlInput" placeholder="Enter website URL" />
-  <button onclick="scrapeWebsite()">Scrape & Train</button>
+    <div class="form-group">
+      <input type="text" id="urlInput" class="form-control" placeholder="Enter website URL" />
+    </div>
+    <button type="button" id="scrapeBtn" class="btn btn-custom btn-block mb-4">Scrape & Train</button>
 
-  <textarea id="queryInput" rows="4" placeholder="Ask a question..."></textarea>
-  <button onclick="askQuestion()">Ask</button>
+    <div id="chatHistory" aria-live="polite" aria-atomic="true"></div>
 
-  <div id="response" class="response"></div>
+    <div class="form-group">
+      <textarea id="queryInput" class="form-control" rows="3" placeholder="Ask a question... (Shift + Enter for newline)"></textarea>
+    </div>
+    <button type="button" id="askBtn" class="btn btn-custom btn-block">Ask</button>
+  </div>
 
+  <!-- Bootstrap & dependencies -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <!-- Working chatbot script -->
   <script>
+    const scrapeBtn = document.getElementById("scrapeBtn");
+    const askBtn = document.getElementById("askBtn");
+    const chatHistory = document.getElementById("chatHistory");
+    const urlInput = document.getElementById("urlInput");
+    const queryInput = document.getElementById("queryInput");
+
+    const originalTexts = {
+      scrapeBtn: scrapeBtn.textContent,
+      askBtn: askBtn.textContent,
+    };
+
+    function setLoading(button, isLoading) {
+      if (isLoading) {
+        button.disabled = true;
+        button.innerHTML = `${originalTexts[button.id]} <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>`;
+      } else {
+        button.disabled = false;
+        button.textContent = originalTexts[button.id];
+      }
+    }
+
+    function appendMessage(sender, message) {
+      const msgDiv = document.createElement("div");
+      msgDiv.classList.add("chat-msg");
+
+      const senderSpan = document.createElement("span");
+      senderSpan.textContent = sender + ": ";
+      senderSpan.classList.add(sender === "You" ? "chat-user" : "chat-bot");
+
+      const textSpan = document.createElement("span");
+      textSpan.textContent = message;
+
+      msgDiv.appendChild(senderSpan);
+      msgDiv.appendChild(textSpan);
+      chatHistory.appendChild(msgDiv);
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+
     async function scrapeWebsite() {
-      const url = document.getElementById('urlInput').value;
-      const res = await fetch('/scrape', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
-      });
-      const data = await res.json();
-      alert(data.message);
+      const url = urlInput.value.trim();
+      if (!url) return alert("Please enter a valid URL.");
+      setLoading(scrapeBtn, true);
+      try {
+        const res = await fetch("/scrape", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url }),
+        });
+        const data = await res.json();
+        alert(data.message || "Scraping complete.");
+      } catch (err) {
+        alert("Error scraping website: " + err.message);
+        console.error(err);
+      } finally {
+        setLoading(scrapeBtn, false);
+      }
     }
 
     async function askQuestion() {
-      const url = document.getElementById('urlInput').value;
-      const query = document.getElementById('queryInput').value;
-      const res = await fetch('/ask', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, query })
-      });
-      const data = await res.json();
-      document.getElementById('response').innerText = data.response;
+      const url = urlInput.value.trim();
+      const query = queryInput.value.trim();
+      if (!url) return alert("Please enter a valid URL.");
+      if (!query) return alert("Please enter your question.");
+
+      appendMessage("You", query);
+      setLoading(askBtn, true);
+
+      try {
+        const res = await fetch("/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url, query }),
+        });
+        const data = await res.json();
+        appendMessage("Bot", data.response || "No response.");
+      } catch (err) {
+        appendMessage("Bot", "Error: " + err.message);
+      } finally {
+        setLoading(askBtn, false);
+        queryInput.value = "";
+        queryInput.focus();
+      }
     }
+    urlInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        scrapeWebsite();
+      }
+    });
+    queryInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        askQuestion();
+      }
+    });
+
+    scrapeBtn.addEventListener("click", scrapeWebsite);
+    askBtn.addEventListener("click", askQuestion);
   </script>
 </body>
 </html>

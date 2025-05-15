@@ -4,4 +4,6 @@ requests
 beautifulsoup4
 faiss-cpu
 python-dotenv
-google-generativeai
+google
+sentence-transformers
+scikit-learn

@@ -1,21 +1,19 @@
-### backend/embedder.py
+from sentence_transformers import SentenceTransformer
+import numpy as np
 
-import os
-from dotenv import load_dotenv
-from google import genai
+# Load the pre-trained SentenceTransformer model
+model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
-load_dotenv()
+def generate_embeddings(text: str) -> np.ndarray:
+    """
+    Generate a 384-dimensional embedding for the given text using the all-MiniLM-L6-v2 model.
 
-# Initialize Gemini client
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    Args:
+        text (str): The input text to be embedded.
 
-
-def generate_embeddings(text: str):
-    model = "models/embedding-001"  # Gemini embedding model
-
-    response = client.embeddings.generate(
-        model=model,
-        content=text
-    )
-
-    return response.embedding.values
+    Returns:
+        np.ndarray: The embedding vector representing the input text.
+    """
+    # Encode the text into an embedding
+    embedding = model.encode(text)
+    return embedding
