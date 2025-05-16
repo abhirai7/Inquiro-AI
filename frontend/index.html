@@ -13,7 +13,6 @@
         font-family: "Segoe UI", sans-serif;
         background-color: #f8f9fa;
         padding: 2rem;
-        transition: background-color 0.3s;
       }
 
       .container {
@@ -23,7 +22,6 @@
         padding: 2rem;
         max-width: 720px;
         margin: auto;
-        transition: background 0.3s;
       }
 
       h1 {
@@ -33,17 +31,19 @@
 
       .chat-message {
         display: flex;
-        align-items: flex-start;
         margin-bottom: 1rem;
-        animation: fadeIn 0.3s ease-in-out;
+        animation: slideFadeIn 0.3s ease forwards;
+        transform-origin: left top;
+        transition: background-color 0.3s, transform 0.3s;
       }
 
-      .chat-message.bot .avatar {
-        background-color: #007bff;
+      .chat-message.user {
+        flex-direction: row-reverse;
+        justify-content: flex-end;
       }
 
-      .chat-message.user .avatar {
-        background-color: #6c757d;
+      .chat-message.bot {
+        justify-content: flex-start;
       }
 
       .avatar {
@@ -55,8 +55,16 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-right: 1rem;
+        margin: 0 1rem;
         flex-shrink: 0;
+      }
+
+      .chat-message.bot .avatar {
+        background-color: #007bff;
+      }
+
+      .chat-message.user .avatar {
+        background-color: #6c757d;
       }
 
       .bubble {
@@ -64,10 +72,14 @@
         padding: 0.75rem 1rem;
         border-radius: 10px;
         max-width: 80%;
+        transition: transform 0.3s ease, background-color 0.3s;
+        transform: scale(0.95);
+        animation: bubblePop 0.2s ease forwards;
       }
 
       .chat-message.user .bubble {
-        background: #e9ecef;
+        background: #dcf8c6;
+        color: #000;
       }
 
       .chat-message.bot .bubble {
@@ -116,14 +128,25 @@
         background-color: #264653;
       }
 
-      @keyframes fadeIn {
+      @keyframes slideFadeIn {
         from {
           opacity: 0;
-          transform: translateY(10px);
+          transform: translateY(10px) scale(0.95);
         }
         to {
           opacity: 1;
-          transform: translateY(0);
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes bubblePop {
+        0% {
+          transform: scale(0.6);
+          opacity: 0;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
         }
       }
     </style>
@@ -148,16 +171,23 @@
       <button
         type="button"
         id="scrapeBtn"
-        class="btn btn-custom btn-block mb-4"
+        class="btn btn-custom btn-block mb-2"
       >
         Scrape & Train
       </button>
       <button
         type="button"
         id="saveBotBtn"
-        class="btn btn-success btn-block mb-4"
+        class="btn btn-success btn-block mb-2"
       >
         Save Bot
+      </button>
+      <button
+        type="button"
+        id="clearBtn"
+        class="btn btn-outline-danger btn-block mb-4"
+      >
+        Clear Chat
       </button>
 
       <div
@@ -193,10 +223,13 @@
       const urlInput = document.getElementById("urlInput");
       const askBtn = document.getElementById("askBtn");
       const scrapeBtn = document.getElementById("scrapeBtn");
+      const saveBtn = document.getElementById("saveBotBtn");
+      const clearBtn = document.getElementById("clearBtn");
 
       function toggleDarkMode() {
         document.body.classList.toggle("dark-mode");
       }
+
       function getFavicon(url) {
         try {
           const domain = new URL(url).origin;
@@ -223,7 +256,7 @@
           img.style.borderRadius = "50%";
           img.onerror = () => {
             avatar.innerText = "B";
-          }; // Fallback
+          };
           avatar.appendChild(img);
         } else {
           avatar.innerText = "U";
@@ -236,7 +269,10 @@
         msgDiv.appendChild(avatar);
         msgDiv.appendChild(bubble);
         chatHistory.appendChild(msgDiv);
-        chatHistory.scrollTop = chatHistory.scrollHeight;
+        chatHistory.scrollTo({
+          top: chatHistory.scrollHeight,
+          behavior: "smooth",
+        });
       }
 
       function setTypingIndicator(state) {
@@ -248,6 +284,7 @@
             indicator.className = "typing-indicator";
             indicator.innerText = "Bot is typing...";
             chatHistory.appendChild(indicator);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
           }
         } else {
           if (indicator) indicator.remove();
@@ -302,19 +339,8 @@
         }
       }
 
-      askBtn.addEventListener("click", askQuestion);
-      scrapeBtn.addEventListener("click", scrapeWebsite);
-
-      queryInput.addEventListener("keydown", function (e) {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          askQuestion();
-        }
-      });
-      const saveBtn = document.getElementById("saveBotBtn");
-
       async function saveBot() {
-        const url = document.getElementById("urlInput").value.trim();
+        const url = urlInput.value.trim();
         if (!url) {
           alert("Please enter a URL first.");
           return;
@@ -341,7 +367,21 @@
         }
       }
 
+      function clearChat() {
+        chatHistory.innerHTML = "";
+      }
+
+      askBtn.addEventListener("click", askQuestion);
+      scrapeBtn.addEventListener("click", scrapeWebsite);
       saveBtn.addEventListener("click", saveBot);
+      clearBtn.addEventListener("click", clearChat);
+
+      queryInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          askQuestion();
+        }
+      });
     </script>
   </body>
 </html>
