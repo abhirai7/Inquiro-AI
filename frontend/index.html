@@ -1,182 +1,347 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Custom Chatbot</title>
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f8f9fa;
-      padding: 2rem;
-    }
-    .container {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-      padding: 2rem;
-      max-width: 700px;
-      margin: auto;
-    }
-    h1 {
-      color: #343a40;
-      margin-bottom: 1.5rem;
-    }
-    .btn-custom {
-      background-color: #007bff;
-      color: white;
-    }
-    .btn-custom:hover {
-      background-color: #0056b3;
-    }
-    .form-control {
-      border-radius: 5px;
-    }
-    #chatHistory {
-      height: 300px;
-      overflow-y: auto;
-      background: #f9f9f9;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      padding: 1rem;
-      margin-bottom: 1rem;
-    }
-    .chat-msg {
-      margin-bottom: 1rem;
-    }
-    .chat-user {
-      font-weight: bold;
-      color: #007bff;
-    }
-    .chat-bot {
-      font-weight: bold;
-      color: #28a745;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1 class="text-center">Custom Website Chatbot</h1>
-
-    <div class="form-group">
-      <input type="text" id="urlInput" class="form-control" placeholder="Enter website URL" />
-    </div>
-    <button type="button" id="scrapeBtn" class="btn btn-custom btn-block mb-4">Scrape & Train</button>
-
-    <div id="chatHistory" aria-live="polite" aria-atomic="true"></div>
-
-    <div class="form-group">
-      <textarea id="queryInput" class="form-control" rows="3" placeholder="Ask a question... (Shift + Enter for newline)"></textarea>
-    </div>
-    <button type="button" id="askBtn" class="btn btn-custom btn-block">Ask</button>
-  </div>
-
-  <!-- Bootstrap & dependencies -->
-  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
-  <!-- Working chatbot script -->
-  <script>
-    const scrapeBtn = document.getElementById("scrapeBtn");
-    const askBtn = document.getElementById("askBtn");
-    const chatHistory = document.getElementById("chatHistory");
-    const urlInput = document.getElementById("urlInput");
-    const queryInput = document.getElementById("queryInput");
-
-    const originalTexts = {
-      scrapeBtn: scrapeBtn.textContent,
-      askBtn: askBtn.textContent,
-    };
-
-    function setLoading(button, isLoading) {
-      if (isLoading) {
-        button.disabled = true;
-        button.innerHTML = `${originalTexts[button.id]} <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>`;
-      } else {
-        button.disabled = false;
-        button.textContent = originalTexts[button.id];
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Custom Chatbot</title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background-color: #f8f9fa;
+        padding: 2rem;
+        transition: background-color 0.3s;
       }
-    }
 
-    function appendMessage(sender, message) {
-      const msgDiv = document.createElement("div");
-      msgDiv.classList.add("chat-msg");
-
-      const senderSpan = document.createElement("span");
-      senderSpan.textContent = sender + ": ";
-      senderSpan.classList.add(sender === "You" ? "chat-user" : "chat-bot");
-
-      const textSpan = document.createElement("span");
-      textSpan.textContent = message;
-
-      msgDiv.appendChild(senderSpan);
-      msgDiv.appendChild(textSpan);
-      chatHistory.appendChild(msgDiv);
-      chatHistory.scrollTop = chatHistory.scrollHeight;
-    }
-
-    async function scrapeWebsite() {
-      const url = urlInput.value.trim();
-      if (!url) return alert("Please enter a valid URL.");
-      setLoading(scrapeBtn, true);
-      try {
-        const res = await fetch("/scrape", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url }),
-        });
-        const data = await res.json();
-        alert(data.message || "Scraping complete.");
-      } catch (err) {
-        alert("Error scraping website: " + err.message);
-        console.error(err);
-      } finally {
-        setLoading(scrapeBtn, false);
+      .container {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+        max-width: 720px;
+        margin: auto;
+        transition: background 0.3s;
       }
-    }
 
-    async function askQuestion() {
-      const url = urlInput.value.trim();
-      const query = queryInput.value.trim();
-      if (!url) return alert("Please enter a valid URL.");
-      if (!query) return alert("Please enter your question.");
+      h1 {
+        color: #343a40;
+        margin-bottom: 1.5rem;
+      }
 
-      appendMessage("You", query);
-      setLoading(askBtn, true);
+      .chat-message {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+        animation: fadeIn 0.3s ease-in-out;
+      }
 
-      try {
-        const res = await fetch("/ask", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url, query }),
-        });
-        const data = await res.json();
-        appendMessage("Bot", data.response || "No response.");
-      } catch (err) {
-        appendMessage("Bot", "Error: " + err.message);
-      } finally {
-        setLoading(askBtn, false);
+      .chat-message.bot .avatar {
+        background-color: #007bff;
+      }
+
+      .chat-message.user .avatar {
+        background-color: #6c757d;
+      }
+
+      .avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        color: white;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        flex-shrink: 0;
+      }
+
+      .bubble {
+        background: #f1f1f1;
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        max-width: 80%;
+      }
+
+      .chat-message.user .bubble {
+        background: #e9ecef;
+      }
+
+      .chat-message.bot .bubble {
+        background: #d9edf7;
+      }
+
+      .typing-indicator {
+        font-style: italic;
+        color: gray;
+        margin-bottom: 1rem;
+      }
+
+      .btn-custom {
+        background-color: #007bff;
+        color: white;
+      }
+
+      .btn-custom:hover {
+        background-color: #0056b3;
+      }
+
+      .form-control {
+        border-radius: 5px;
+      }
+
+      .dark-mode body {
+        background-color: #222 !important;
+        color: white !important;
+      }
+
+      .dark-mode .container {
+        background-color: #2e2e2e;
+      }
+
+      .dark-mode .form-control {
+        background-color: #444;
+        color: white;
+        border: 1px solid #666;
+      }
+
+      .dark-mode .bubble {
+        background-color: #3a3a3a;
+      }
+
+      .dark-mode .chat-message.bot .bubble {
+        background-color: #264653;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Custom Chatbot</h1>
+        <button class="btn btn-sm btn-secondary" onclick="toggleDarkMode()">
+          Toggle Dark Mode
+        </button>
+      </div>
+
+      <div class="form-group">
+        <input
+          type="text"
+          id="urlInput"
+          class="form-control"
+          placeholder="Enter website URL"
+        />
+      </div>
+      <button
+        type="button"
+        id="scrapeBtn"
+        class="btn btn-custom btn-block mb-4"
+      >
+        Scrape & Train
+      </button>
+      <button
+        type="button"
+        id="saveBotBtn"
+        class="btn btn-success btn-block mb-4"
+      >
+        Save Bot
+      </button>
+
+      <div
+        id="chatHistory"
+        style="
+          height: 300px;
+          overflow-y: auto;
+          background: #f9f9f9;
+          border: 1px solid #ddd;
+          border-radius: 5px;
+          padding: 1rem;
+        "
+        aria-live="polite"
+        aria-atomic="true"
+      ></div>
+
+      <div class="form-group mt-3">
+        <textarea
+          id="queryInput"
+          class="form-control"
+          rows="3"
+          placeholder="Ask a question... (Shift + Enter for newline)"
+        ></textarea>
+      </div>
+      <button type="button" id="askBtn" class="btn btn-custom btn-block">
+        Ask
+      </button>
+    </div>
+
+    <script>
+      const chatHistory = document.getElementById("chatHistory");
+      const queryInput = document.getElementById("queryInput");
+      const urlInput = document.getElementById("urlInput");
+      const askBtn = document.getElementById("askBtn");
+      const scrapeBtn = document.getElementById("scrapeBtn");
+
+      function toggleDarkMode() {
+        document.body.classList.toggle("dark-mode");
+      }
+      function getFavicon(url) {
+        try {
+          const domain = new URL(url).origin;
+          return `${domain}/favicon.ico`;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function appendMessage(role, message) {
+        const msgDiv = document.createElement("div");
+        msgDiv.className = `chat-message ${role}`;
+
+        const avatar = document.createElement("div");
+        avatar.className = "avatar";
+
+        if (role === "bot") {
+          const img = document.createElement("img");
+          const faviconUrl = getFavicon(urlInput.value.trim());
+          img.src = faviconUrl;
+          img.alt = "Bot";
+          img.style.width = "100%";
+          img.style.height = "100%";
+          img.style.borderRadius = "50%";
+          img.onerror = () => {
+            avatar.innerText = "B";
+          }; // Fallback
+          avatar.appendChild(img);
+        } else {
+          avatar.innerText = "U";
+        }
+
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
+        bubble.innerText = message;
+
+        msgDiv.appendChild(avatar);
+        msgDiv.appendChild(bubble);
+        chatHistory.appendChild(msgDiv);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+      }
+
+      function setTypingIndicator(state) {
+        let indicator = document.getElementById("typingIndicator");
+        if (state) {
+          if (!indicator) {
+            indicator = document.createElement("div");
+            indicator.id = "typingIndicator";
+            indicator.className = "typing-indicator";
+            indicator.innerText = "Bot is typing...";
+            chatHistory.appendChild(indicator);
+          }
+        } else {
+          if (indicator) indicator.remove();
+        }
+      }
+
+      async function askQuestion() {
+        const query = queryInput.value.trim();
+        const url = urlInput.value.trim();
+        if (!query || !url) return;
+
+        appendMessage("user", query);
         queryInput.value = "";
-        queryInput.focus();
-      }
-    }
-    urlInput.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        scrapeWebsite();
-      }
-    });
-    queryInput.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        askQuestion();
-      }
-    });
+        setTypingIndicator(true);
 
-    scrapeBtn.addEventListener("click", scrapeWebsite);
-    askBtn.addEventListener("click", askQuestion);
-  </script>
-</body>
+        try {
+          const res = await fetch("/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url, query }),
+          });
+          const data = await res.json();
+          setTypingIndicator(false);
+          appendMessage("bot", data.response || "No response.");
+        } catch (err) {
+          setTypingIndicator(false);
+          appendMessage("bot", "Error: " + err.message);
+        }
+      }
+
+      async function scrapeWebsite() {
+        const url = urlInput.value.trim();
+        if (!url) {
+          alert("Please enter a valid URL.");
+          return;
+        }
+        scrapeBtn.disabled = true;
+        scrapeBtn.innerHTML = `Scraping... <span class="spinner-border spinner-border-sm"></span>`;
+        try {
+          const res = await fetch("/scrape", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url }),
+          });
+          const data = await res.json();
+          alert(data.message || "Scraping completed.");
+        } catch (err) {
+          alert("Scrape failed: " + err.message);
+        } finally {
+          scrapeBtn.disabled = false;
+          scrapeBtn.textContent = "Scrape & Train";
+        }
+      }
+
+      askBtn.addEventListener("click", askQuestion);
+      scrapeBtn.addEventListener("click", scrapeWebsite);
+
+      queryInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          askQuestion();
+        }
+      });
+      const saveBtn = document.getElementById("saveBotBtn");
+
+      async function saveBot() {
+        const url = document.getElementById("urlInput").value.trim();
+        if (!url) {
+          alert("Please enter a URL first.");
+          return;
+        }
+
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving...";
+
+        try {
+          const res = await fetch("/save-bot", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url }),
+          });
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Error saving bot");
+          alert(data.message);
+        } catch (err) {
+          alert("Failed to save bot: " + err.message);
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.textContent = "Save Bot";
+        }
+      }
+
+      saveBtn.addEventListener("click", saveBot);
+    </script>
+  </body>
 </html>

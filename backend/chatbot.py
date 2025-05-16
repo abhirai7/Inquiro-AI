@@ -29,7 +29,7 @@ User: {query}
 Assistant:
 """
 
-    model = "gemini-2.0-flash-lite"  # You can update this as needed
+    model = "gemini-2.0-flash"  # You can update this as needed
     contents = [
         types.Content(
             role="user",
