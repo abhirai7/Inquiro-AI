@@ -275,7 +275,7 @@
 
           copyBtn.addEventListener("click", () => {
             navigator.clipboard
-              .writeText(message.value)
+              .writeText(message)
               .then(() => {
                 copyBtn.innerText = "✅";
                 setTimeout(() => {

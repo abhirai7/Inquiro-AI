@@ -1,12 +1,12 @@
 import os
 from dotenv import load_dotenv
-from google import genai
+from google.genai import Client
 from google.genai import types
 
 load_dotenv()
 
 # Initialize Gemini client
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+client = Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 
 def generate_response(query: str, context: str) -> str:
