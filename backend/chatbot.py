@@ -8,44 +8,34 @@ load_dotenv()
 # Initialize Gemini client
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
+
 def generate_response(query: str, context: str) -> str:
-    """
-    Uses direct prompting with Gemini API to answer the query based on full context.
-    You may want to adjust the prompt format based on your needs.
-    This function assumes that the context is already a string containing the full content
-    from the website. 
-
-    Args:
-        query (str): The user's question.
-        context (str): The full content text from the website.
-
-    Returns:
-        str: Assistant's response.
-    """
     prompt = f"""
-You are a helpful assistant. Use the following context from a website to answer the user's query. IF the answer is not in the context, You are allowed to use external knowledge.
+You are a helpful assistant. Use the following context from a website to answer the user's query.
+If the answer is not present in the context, use your own general knowledge.
 
 Context:
-{context}
+\"\"\"{context}\"\"\"
 
 User: {query}
 Assistant:
 """
 
-    model = "gemini-2.0-flash"  # You can update this as needed
     contents = [
         types.Content(
             role="user",
-            parts=[types.Part.from_text(text=prompt)],
+            parts=[types.Part(text=prompt)],  # ✅ FIXED
         )
     ]
 
     config = types.GenerateContentConfig(response_mime_type="text/plain")
 
-    response = client.models.generate_content(
-        model=model,
-        contents=contents,
-        config=config,
-    )
-
-    return response.text.strip()
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=contents,
+            config=config,
+        )
+        return response.candidates[0].content.parts[0].text.strip()
+    except Exception as e:
+        return f"Error generating response: {str(e)}"

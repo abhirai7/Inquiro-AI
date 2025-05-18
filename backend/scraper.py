@@ -1,44 +1,35 @@
 # backend/scraper.py
-import requests
-from bs4 import BeautifulSoup
-import numpy as np
-from sentence_transformers import SentenceTransformer
-from urllib.parse import urlparse
+from playwright.sync_api import sync_playwright
+import re
 
 from .vector_store import save_embeddings
 
-model = SentenceTransformer("all-MiniLM-L6-v2")
 
-def scrape_website(url: str):
+def scrape_website(url: str) -> str:
     try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, "html.parser")
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.goto(url, timeout=60000, wait_until="networkidle")  # Wait for JS to load
 
-        for tag in soup(['script', 'style', 'noscript']):
+            # Get full rendered page content
+            html = page.content()
+            browser.close()
+
+        # Use BeautifulSoup to clean up the rendered HTML
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(html, "html.parser")
+
+        for tag in soup(["script", "style", "noscript"]):
             tag.decompose()
 
-        text = soup.get_text(separator=' ', strip=True)
-    
+        text = soup.get_text(separator=" ", strip=True)
+
+        # Optional: clean up multiple spaces
+        text = re.sub(r"\s+", " ", text)
+
         return text
 
-        # Extract main text content
-        paragraphs = soup.find_all("p")
-        content = "\n".join(p.get_text() for p in paragraphs).strip()
-
-        if not content:
-            raise ValueError("No content extracted from website.")
-
-        # Generate embedding
-        embedding = model.encode(content)
-
-        # Save to vector store
-        domain = urlparse(url).netloc
-        save_embeddings(domain, np.array(embedding), content)
-
-        
-        return True
-
     except Exception as e:
-        print(f"[Scraper Error] {e}")
+        print(f"[Playwright Scraper Error] {e}")
         return ""
