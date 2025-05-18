@@ -11,13 +11,8 @@ import shutil
 
 from .scraper import scrape_website
 from .chatbot import generate_response as get_bot_response
-from sentence_transformers import SentenceTransformer
-from backend.vector_store import save_embeddings
 
 app = FastAPI()
-
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")  # Or any valid model
-
 
 # Serve static files for widget
 app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
@@ -64,23 +59,17 @@ async def scrape(request: Request):
     try:
         body = await request.json()
         data = ScrapeRequest(**body)
-        url = str(data.url)  # Ensure it's a string
+        logging.info(f"Scraping: {data.url}")
 
-        logging.info(f"Scraping: {url}")
+        if already_scraped(str(data.url)):
+            return {"message": f"Already scraped: {data.url}"}
 
-        if already_scraped(url):
-            return {"message": f"Already scraped: {url}"}
+        success = scrape_website(str(data.url))
+        print(f"Scraping result: {success}")
+        if not success:
+            return JSONResponse(status_code=500, content={"error": "Scraping or embedding failed."})
 
-        text = scrape_website(url)
-        if not text.strip():
-            return JSONResponse(status_code=400, content={"error": "Empty text scraped."})
-
-        # Generate and save embedding
-        embedding = embedding_model.encode(text)
-        save_embeddings(url, embedding, text)
-
-        return {"message": f"Scraping and embedding done for {url}"}
-
+        return {"message": f"Scraping completed for {data.url}"}
     except ValidationError:
         return JSONResponse(status_code=400, content={"error": "Invalid URL."})
     except Exception as e:

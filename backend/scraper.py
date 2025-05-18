@@ -19,6 +19,7 @@ def scrape_website(url: str):
             tag.decompose()
 
         text = soup.get_text(separator=' ', strip=True)
+    
         return text
 
         # Extract main text content

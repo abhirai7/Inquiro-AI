@@ -36,6 +36,15 @@
         transform-origin: left top;
         transition: background-color 0.3s, transform 0.3s;
       }
+      .chat-message .btn-link {
+        text-decoration: none;
+        opacity: 0.6;
+        transition: opacity 0.2s;
+      }
+
+      .chat-message .btn-link:hover {
+        opacity: 1;
+      }
 
       .chat-message.user {
         flex-direction: row-reverse;
@@ -245,34 +254,48 @@
 
         const avatar = document.createElement("div");
         avatar.className = "avatar";
-
-        if (role === "bot") {
-          const img = document.createElement("img");
-          const faviconUrl = getFavicon(urlInput.value.trim());
-          img.src = faviconUrl;
-          img.alt = "Bot";
-          img.style.width = "100%";
-          img.style.height = "100%";
-          img.style.borderRadius = "50%";
-          img.onerror = () => {
-            avatar.innerText = "B";
-          };
-          avatar.appendChild(img);
-        } else {
-          avatar.innerText = "U";
-        }
+        avatar.innerText = role === "user" ? "U" : "B";
 
         const bubble = document.createElement("div");
         bubble.className = "bubble";
         bubble.innerText = message;
 
         msgDiv.appendChild(avatar);
-        msgDiv.appendChild(bubble);
+
+        if (role === "bot") {
+          const wrapper = document.createElement("div");
+          wrapper.style.display = "flex";
+          wrapper.style.alignItems = "center";
+          wrapper.style.gap = "0.5rem";
+
+          const copyBtn = document.createElement("button");
+          copyBtn.className = "btn btn-sm btn-outline-secondary";
+          copyBtn.innerText = "📋";
+          copyBtn.title = "Copy to clipboard";
+
+          copyBtn.addEventListener("click", () => {
+            navigator.clipboard
+              .writeText(message.value)
+              .then(() => {
+                copyBtn.innerText = "✅";
+                setTimeout(() => {
+                  copyBtn.innerText = "📋";
+                }, 1000);
+              })
+              .catch((err) => {
+                alert("Copy failed: " + err.message);
+              });
+          });
+
+          wrapper.appendChild(bubble);
+          wrapper.appendChild(copyBtn);
+          msgDiv.appendChild(wrapper);
+        } else {
+          msgDiv.appendChild(bubble);
+        }
+
         chatHistory.appendChild(msgDiv);
-        chatHistory.scrollTo({
-          top: chatHistory.scrollHeight,
-          behavior: "smooth",
-        });
+        chatHistory.scrollTop = chatHistory.scrollHeight;
       }
 
       function setTypingIndicator(state) {

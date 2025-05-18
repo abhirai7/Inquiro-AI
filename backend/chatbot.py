@@ -11,7 +11,9 @@ client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 def generate_response(query: str, context: str) -> str:
     """
     Uses direct prompting with Gemini API to answer the query based on full context.
-    
+    You may want to adjust the prompt format based on your needs.
+    This function assumes that the context is already a string containing the full content
+    from the website. 
 
     Args:
         query (str): The user's question.
@@ -21,7 +23,7 @@ def generate_response(query: str, context: str) -> str:
         str: Assistant's response.
     """
     prompt = f"""
-You are a helpful assistant. Use the following context from a website to answer the user's query.
+You are a helpful assistant. Use the following context from a website to answer the user's query. IF the answer is not in the context, You are allowed to use external knowledge.
 
 Context:
 {context}
