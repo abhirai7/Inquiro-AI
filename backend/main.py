@@ -14,8 +14,8 @@ from .chatbot import generate_response as get_bot_response
 
 app = FastAPI()
 
-# Serve static files for widget
-app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
+# # Serve static files for widget
+# app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
 
 # CORS configuration
 app.add_middleware(
