@@ -56,6 +56,10 @@ def already_scraped(url):
 async def root():
     # Serve the actual HTML file as the root response
     return FileResponse("frontend/index.html", media_type="text/html")
+@app.get("/bot_use.html")
+async def serve_bot_use():
+    return FileResponse("frontend/bot_use.html", media_type="text/html")
+
 
 success = False
 @app.post("/scrape")
@@ -155,3 +159,4 @@ async def save_bot(request: Request):
     except Exception as e:
         logging.error(f"Bot saving failed: {e}")
         return JSONResponse(status_code=500, content={"error": str(e)})
+

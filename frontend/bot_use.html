@@ -1,0 +1,36 @@
+<!-- frontend/static/bot_use.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Use the Trained Bot</title>
+  <script>
+    async function askQuestion() {
+      const query = document.getElementById("query").value;
+      const url = localStorage.getItem("bot_url");  // ✅ Load stored URL
+
+      if (!url) {
+        alert("No bot URL found. Please train the bot first.");
+        return;
+      }
+
+      const res = await fetch("/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, query }),
+      });
+
+      const data = await res.json();
+      document.getElementById("response").textContent = data.response || data.error;
+    }
+  </script>
+</head>
+<body>
+  <h2>Use Your Trained Bot</h2>
+  <textarea id="query" rows="4" cols="50" placeholder="Ask your question here..."></textarea><br />
+  <button onclick="askQuestion()">Ask</button>
+
+  <h3>Response:</h3>
+  <pre id="response" style="background: #eee; padding: 1em;"></pre>
+</body>
+</html>
