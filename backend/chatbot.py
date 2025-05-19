@@ -9,7 +9,7 @@ load_dotenv()
 client = Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 
-def generate_response(query: str, context: str) -> str:
+def generate_response(context: str, query: str) -> str:
     prompt = f"""
 You are a helpful assistant. Use the following context from a website to answer the user's query.
 If the answer is not present in the context, use your own general knowledge.
@@ -22,10 +22,7 @@ Assistant:
 """
 
     contents = [
-        types.Content(
-            role="user",
-            parts=[types.Part(text=prompt)],  # ✅ FIXED
-        )
+        types.Content(role="user", parts=[types.Part(text=prompt)])
     ]
 
     config = types.GenerateContentConfig(response_mime_type="text/plain")

@@ -1,35 +1,42 @@
 # backend/scraper.py
-from playwright.sync_api import sync_playwright
+
+import os
 import re
+import hashlib
+from bs4 import BeautifulSoup
+from playwright.async_api import async_playwright
 
 from .vector_store import save_embeddings
 
 
-def scrape_website(url: str) -> str:
+async def scrape_website(url: str) -> bool:
     try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
-            page.goto(url, timeout=60000, wait_until="networkidle")  # Wait for JS to load
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            page = await browser.new_page()
+            await page.goto(url, timeout=60000, wait_until="networkidle")
+            html = await page.content()
+            await browser.close()
 
-            # Get full rendered page content
-            html = page.content()
-            browser.close()
-
-        # Use BeautifulSoup to clean up the rendered HTML
-        from bs4 import BeautifulSoup
         soup = BeautifulSoup(html, "html.parser")
-
         for tag in soup(["script", "style", "noscript"]):
             tag.decompose()
 
         text = soup.get_text(separator=" ", strip=True)
-
-        # Optional: clean up multiple spaces
         text = re.sub(r"\s+", " ", text)
 
-        return text
+        # Save cleaned text
+        hashed = hashlib.md5(url.encode()).hexdigest()
+        os.makedirs("data/texts", exist_ok=True)
+        with open(f"data/texts/{hashed}.txt", "w", encoding="utf-8") as f:
+            f.write(text)
+
+        # Save embeddings
+        save_embeddings(text, url)
+
+        print(f"[Scraper] Text saved for {url}")
+        return True
 
     except Exception as e:
-        print(f"[Playwright Scraper Error] {e}")
-        return ""
+        print(f"[Scraper Error] {e}")
+        return False

@@ -9,8 +9,11 @@ import hashlib
 import os
 import shutil
 
-from .scraper import scrape_website
+from .scraper import scrape_website 
+from .utils import load_scraped_text
 from .chatbot import generate_response as get_bot_response
+from .chat_history import save_to_history
+
 
 app = FastAPI()
 
@@ -54,6 +57,7 @@ async def root():
     # Serve the actual HTML file as the root response
     return FileResponse("frontend/index.html", media_type="text/html")
 
+success = False
 @app.post("/scrape")
 async def scrape(request: Request):
     try:
@@ -64,7 +68,7 @@ async def scrape(request: Request):
         if already_scraped(str(data.url)):
             return {"message": f"Already scraped: {data.url}"}
 
-        success = scrape_website(str(data.url))
+        success = await scrape_website(str(data.url))
         print(f"Scraping result: {success}")
         if not success:
             return JSONResponse(status_code=500, content={"error": "Scraping or embedding failed."})
@@ -83,10 +87,16 @@ async def ask(request: Request):
         data = AskRequest(**body)
         logging.info(f"Query: '{data.query}' for {data.url}")
 
-        response = get_bot_response(data.url, data.query)
+        context = load_scraped_text(str(data.url))  # ✅ load saved content
+        response = get_bot_response(context, data.query)  # ✅ pass context
+
+        save_to_history(data.query, context, response)
+
         return {"response": response}
+        
     except ValidationError:
         return JSONResponse(status_code=400, content={"error": "Invalid input."})
+    
     except Exception as e:
         logging.error(f"Ask error: {e}")
         return JSONResponse(status_code=500, content={"error": str(e)})
@@ -102,6 +112,12 @@ def serve_embed_widget():
     with open("frontend/static/embed.html", "r", encoding="utf-8") as f:
         content = f.read()
     return HTMLResponse(content)
+
+@app.get("/history")
+def get_history():
+    from .chat_history import load_history
+    return load_history()
+
 
 @app.post("/save-bot")
 async def save_bot(request: Request):
