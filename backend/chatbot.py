@@ -9,13 +9,22 @@ load_dotenv()
 client = Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 
-def generate_response(context: str, query: str) -> str:
+def generate_response(context: str, query: str, history: list = None) -> str:
+    history_text = ""
+    if history:
+        for h in history[-5:]:  # Last 5 interactions
+            history_text += f"User: {h['query']}\nAssistant: {h['response']}\n"
     prompt = f"""
 You are a helpful assistant. Use the following context from a website to answer the user's query.
 If the answer is not present in the context, use your own general knowledge.
-
+The context is the scraped data from url. Use this to answer the user's queries.
+Determine the main topic, important points, and any relevant details from the context.
 Context:
 \"\"\"{context}\"\"\"
+
+
+Recent conversation history:
+\"\"\"{history_text}\"\"\"
 
 User: {query}
 Assistant:

@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Website Chatbot Assistant",
+  "version": "1.0",
+  "description": "A chatbot that helps answer queries about the current website.",
+  "permissions": ["scripting", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["style.css"]
+    }
+  ],
+  "action": {
+    "default_title": "Chatbot Assistant"
+  }
+}

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+
 from pydantic import BaseModel, HttpUrl, ValidationError
 from urllib.parse import urlparse
 import logging
@@ -12,7 +12,7 @@ import shutil
 from .scraper import scrape_website 
 from .utils import load_scraped_text
 from .chatbot import generate_response as get_bot_response
-from .chat_history import save_to_history
+from .chat_history import save_to_history , load_history
 
 
 app = FastAPI()
@@ -92,7 +92,12 @@ async def ask(request: Request):
         logging.info(f"Query: '{data.query}' for {data.url}")
 
         context = load_scraped_text(str(data.url))  # ✅ load saved content
-        response = get_bot_response(context, data.query)  # ✅ pass context
+        if context=="":
+            context = f"The user is asking about this website: {data.url}"
+
+        chat_history = load_history()
+
+        response = get_bot_response(context, data.query, chat_history)
 
         save_to_history(data.query, context, response)
 
