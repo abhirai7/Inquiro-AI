@@ -8,4 +8,5 @@ google
 sentence-transformers
 scikit-learn
 google-genai
+youtube-transcript-api
 

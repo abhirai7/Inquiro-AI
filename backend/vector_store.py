@@ -3,10 +3,29 @@ import numpy as np
 import pickle
 from sklearn.metrics.pairwise import cosine_similarity
 
+from sentence_transformers import SentenceTransformer
+import numpy as np
 # Directory to store vector data
 VECTOR_DIR = "data/vectors"
 os.makedirs(VECTOR_DIR, exist_ok=True)
 
+
+# Load the pre-trained SentenceTransformer model
+model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+
+def generate_embeddings(text: str) -> np.ndarray:
+    """
+    Generate a 384-dimensional embedding for the given text using the all-MiniLM-L6-v2 model.
+
+    Args:
+        text (str): The input text to be embedded.
+
+    Returns:
+        np.ndarray: The embedding vector representing the input text.
+    """
+    # Encode the text into an embedding
+    embedding = model.encode(text)
+    return embedding
 
 def save_embeddings(domain: str, embedding: np.ndarray, text: str):
     """

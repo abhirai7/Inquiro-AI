@@ -12,8 +12,10 @@ import shutil
 from .scraper import scrape_website 
 from .utils import load_scraped_text
 from .chatbot import generate_response as get_bot_response
+from .chatbot import clean_text
 from .chat_history import save_to_history , load_history
-
+from .youtube import is_youtube_video_url
+from .youtube import get_youtube_transcript
 
 app = FastAPI()
 
@@ -67,12 +69,26 @@ async def scrape(request: Request):
     try:
         body = await request.json()
         data = ScrapeRequest(**body)
+        url = str(data.url)
+
         logging.info(f"Scraping: {data.url}")
 
         if already_scraped(str(data.url)):
             return {"message": f"Already scraped: {data.url}"}
 
+        if is_youtube_video_url(url):
+            transcript = get_youtube_transcript(url)
+            if not transcript:
+                # return await scrape_website(str(data.url))
+                return JSONResponse(status_code=500, content={"error": "Failed to fetch YouTube transcript."})
+            with open(get_data_path(url), "wb") as f:
+                import pickle
+                pickle.dump(transcript, f)
+            return {"message": f"YouTube transcript saved for {url}"}
+
+
         success = await scrape_website(str(data.url))
+
         print(f"Scraping result: {success}")
         if not success:
             return JSONResponse(status_code=500, content={"error": "Scraping or embedding failed."})
@@ -96,6 +112,9 @@ async def ask(request: Request):
             context = f"The user is asking about this website: {data.url}"
 
         chat_history = load_history()
+
+        if not chat_history:
+            chat_history = []
 
         response = get_bot_response(context, data.query, chat_history)
 
